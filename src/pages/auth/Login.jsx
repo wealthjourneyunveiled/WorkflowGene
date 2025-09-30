@@ -6,6 +6,7 @@ import Input from '../../components/ui/Input';
 import Icon from '../../components/AppIcon';
 import { signIn } from '../../lib/auth';
 import { useAuth } from '../../components/auth/AuthProvider';
+import { testConnection } from '../../lib/supabase';
 import toast from 'react-hot-toast';
 
 const Login = () => {
@@ -41,6 +42,12 @@ const Login = () => {
     setIsSubmitting(true);
 
     try {
+      // Test database connection first
+      const connectionTest = await testConnection();
+      if (!connectionTest.success) {
+        throw new Error(`Database connection failed: ${connectionTest.error}`);
+      }
+
       const result = await signIn(formData);
       
       if (result.success) {

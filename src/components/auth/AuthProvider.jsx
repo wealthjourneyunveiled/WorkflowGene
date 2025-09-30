@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect } from 'react';
 import useAuthStore from '../../store/authStore';
+import { ensureSuperAdmin } from '../../lib/auth';
 
 const AuthContext = createContext({});
 
@@ -16,7 +17,13 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     // Initialize auth state on app start
-    authStore.initialize();
+    const initializeAuth = async () => {
+      await authStore.initialize();
+      // Ensure super admin exists after initialization
+      await ensureSuperAdmin();
+    };
+    
+    initializeAuth();
   }, []);
 
   const value = {

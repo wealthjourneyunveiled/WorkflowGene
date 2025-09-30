@@ -93,6 +93,8 @@ const DashboardLayout = ({ children }) => {
   console.log('Dashboard Layout Debug:', {
     user: user?.email,
     profile: profile?.role,
+    profileId: profile?.id,
+    organizationId: profile?.organization_id,
     filteredNavigation: filteredNavigation.map(n => n.name)
   });
   const isActivePath = (path) => {
