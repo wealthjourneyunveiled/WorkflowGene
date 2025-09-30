@@ -9,6 +9,18 @@ import { isSupabaseConfigured } from './lib/supabase';
 
 function App() {
   useEffect(() => {
+    // Check environment configuration on startup
+    if (import.meta.env.DEV) {
+      console.log('🔧 Development Mode - Environment Check:');
+      console.log('Supabase URL:', import.meta.env.VITE_SUPABASE_URL ? '✅ Configured' : '❌ Missing');
+      console.log('Supabase Anon Key:', import.meta.env.VITE_SUPABASE_ANON_KEY ? '✅ Configured' : '❌ Missing');
+      
+      if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
+        console.error('❌ CONFIGURATION ERROR: Missing Supabase credentials!');
+        console.error('Please update your .env file with the correct values.');
+      }
+    }
+
     // Check Supabase configuration on app start
     if (!isSupabaseConfigured()) {
       console.error('Supabase is not properly configured. Please check your environment variables.');

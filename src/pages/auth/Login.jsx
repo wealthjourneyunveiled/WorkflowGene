@@ -42,6 +42,11 @@ const Login = () => {
     setIsSubmitting(true);
 
     try {
+      // Check if Supabase is configured
+      if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
+        throw new Error('Supabase credentials not configured. Please check your .env file.');
+      }
+
       // Test database connection first
       const connectionTest = await testConnection();
       if (!connectionTest.success) {
@@ -94,6 +99,19 @@ const Login = () => {
 
           {/* Login Form */}
           <div className="bg-card rounded-genetic-xl shadow-organic-lg p-8">
+            {/* Environment Check Warning */}
+            {(!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) && (
+              <div className="mb-6 p-4 bg-error/10 border border-error/20 rounded-genetic-md">
+                <div className="flex items-center space-x-2 mb-2">
+                  <Icon name="AlertTriangle" size={16} className="text-error" />
+                  <span className="font-semibold text-error">Configuration Error</span>
+                </div>
+                <p className="text-sm text-text-secondary">
+                  Supabase credentials are missing. Please check your .env file configuration.
+                </p>
+              </div>
+            )}
+
             <form onSubmit={handleSubmit} className="space-y-6">
               <Input
                 label="Email Address"
@@ -143,6 +161,7 @@ const Login = () => {
                 size="lg"
                 fullWidth
                 loading={isSubmitting}
+                disabled={!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY}
                 iconName="LogIn"
                 iconPosition="right"
                 className="btn-organic"

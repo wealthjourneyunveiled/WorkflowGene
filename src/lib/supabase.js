@@ -3,6 +3,12 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
+console.log('Supabase Config:', {
+  url: supabaseUrl,
+  hasAnonKey: !!supabaseAnonKey,
+  anonKeyLength: supabaseAnonKey?.length
+});
+
 // Create Supabase client with fallback handling
 export const supabase = createClient(
   supabaseUrl || 'https://placeholder.supabase.co',
@@ -13,7 +19,7 @@ export const supabase = createClient(
       autoRefreshToken: true,
       detectSessionInUrl: true,
       flowType: 'pkce',
-      debug: true
+      debug: false
     },
     global: {
       headers: {
@@ -30,7 +36,10 @@ export const isSupabaseConfigured = () => {
     supabaseAnonKey !== 'placeholder-key');
   
   if (!configured) {
-    console.warn('Supabase not properly configured. Please check your environment variables.');
+    console.error('❌ Supabase Configuration Missing!');
+    console.error('Please add your Supabase credentials to the .env file:');
+    console.error('VITE_SUPABASE_URL=your-project-url');
+    console.error('VITE_SUPABASE_ANON_KEY=your-anon-key');
   }
   
   return configured;

@@ -16,6 +16,14 @@ const LoadingSpinner = ({ size = 'default', message = 'Loading...' }) => {
           <Icon name="Loader2" size={size === 'sm' ? 16 : size === 'lg' ? 48 : size === 'xl' ? 64 : 32} />
         </div>
         <p className="text-text-secondary">{message}</p>
+        
+        {/* Debug info for development */}
+        {import.meta.env.DEV && (
+          <div className="mt-4 text-xs text-text-secondary">
+            <p>Supabase URL: {import.meta.env.VITE_SUPABASE_URL ? '✅ Set' : '❌ Missing'}</p>
+            <p>Anon Key: {import.meta.env.VITE_SUPABASE_ANON_KEY ? '✅ Set' : '❌ Missing'}</p>
+          </div>
+        )}
       </div>
     </div>
   );

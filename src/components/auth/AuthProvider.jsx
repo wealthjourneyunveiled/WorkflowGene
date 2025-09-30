@@ -19,8 +19,6 @@ export const AuthProvider = ({ children }) => {
     // Initialize auth state on app start
     const initializeAuth = async () => {
       await authStore.initialize();
-      // Ensure super admin exists after initialization
-      await ensureSuperAdmin();
     };
     
     initializeAuth();
