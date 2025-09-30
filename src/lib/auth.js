@@ -114,6 +114,8 @@ export const signIn = async ({ email, password }) => {
     // Clear any existing invalid sessions first
     await clearInvalidSession();
 
+    console.log('Attempting login for:', email);
+
     const { data, error } = await supabase.auth.signInWithPassword({
       email: email.trim(),
       password
@@ -137,9 +139,16 @@ export const signIn = async ({ email, password }) => {
       return { success: false, error: error.message || 'Login failed. Please try again.' };
     }
     
+    console.log('Auth successful, user:', data.user?.email);
+
     // Update last login timestamp
     if (data.user) {
       try {
+        // Ensure super admin has correct role
+        if (data.user.email === 'superadmin@workflowgene.cloud') {
+          await ensureSuperAdmin();
+        }
+
         await supabase
           .from('profiles')
           .update({ 
@@ -348,10 +357,12 @@ export const ensureSuperAdmin = async () => {
   if (!isSupabaseConfigured()) return;
 
   try {
-    // Use a direct query to check for super admin
-    const { data: existingAdmin, error: checkError } = await supabase
+    console.log('Ensuring super admin exists...');
+    
+    // Check if super admin profile exists
+    const { data: existingProfile, error: checkError } = await supabase
       .from('profiles')
-      .select('id, role')
+      .select('id, role, email, first_name, last_name')
       .eq('email', 'superadmin@workflowgene.cloud')
       .maybeSingle();
 
@@ -360,17 +371,27 @@ export const ensureSuperAdmin = async () => {
       return;
     }
 
-    if (!existingAdmin) {
+    console.log('Existing super admin profile:', existingProfile);
+
+    // Check if auth user exists
+    const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
+    const superAdminAuthUser = authUsers?.users?.find(u => u.email === 'superadmin@workflowgene.cloud');
+    
+    console.log('Super admin auth user exists:', !!superAdminAuthUser);
+
+    if (!existingProfile && superAdminAuthUser) {
       console.log('Creating super admin profile...');
       const { error: insertError } = await supabase
         .from('profiles')
         .insert({
+          id: superAdminAuthUser.id,
           email: 'superadmin@workflowgene.cloud',
           first_name: 'Super',
           last_name: 'Admin',
           role: 'super_admin',
           email_verified: true,
           organization_id: null,
+          is_active: true,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         });
@@ -380,7 +401,7 @@ export const ensureSuperAdmin = async () => {
       } else {
         console.log('Super admin profile created successfully');
       }
-    } else if (existingAdmin.role !== 'super_admin') {
+    } else if (existingProfile && existingProfile.role !== 'super_admin') {
       console.log('Updating super admin role...');
       const { error: updateError } = await supabase
         .from('profiles')
@@ -390,6 +411,7 @@ export const ensureSuperAdmin = async () => {
           first_name: 'Super',
           last_name: 'Admin',
           organization_id: null,
+          is_active: true,
           updated_at: new Date().toISOString()
         })
         .eq('email', 'superadmin@workflowgene.cloud');
@@ -399,6 +421,10 @@ export const ensureSuperAdmin = async () => {
       } else {
         console.log('Super admin role updated');
       }
+    } else if (existingProfile) {
+      console.log('Super admin profile already exists with correct role');
+    } else {
+      console.warn('Super admin auth user does not exist. Please create it in Supabase Auth first.');
     }
   } catch (error) {
     console.error('Error ensuring super admin:', error);

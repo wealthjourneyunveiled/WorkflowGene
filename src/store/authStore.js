@@ -34,6 +34,8 @@ const useAuthStore = create((set, get) => ({
     try {
       set({ loading: true, error: null });
 
+      console.log('Initializing auth state...');
+
       // Get current session with error handling
       const { data: { session } = {}, error: sessionError } = await supabase.auth.getSession();
       
@@ -58,10 +60,13 @@ const useAuthStore = create((set, get) => ({
       }
 
       const user = session?.user || null;
+      console.log('Current user from session:', user?.email);
       let profile = null;
 
       if (user) {
         try {
+          console.log('Fetching profile for user:', user.email);
+          
           // Get profile with retry logic
           let retryCount = 0;
           const maxRetries = 3;
@@ -82,15 +87,20 @@ const useAuthStore = create((set, get) => ({
                   // Profile doesn't exist, create it
                   console.log('Creating profile for user:', user.email);
                   
+                  // Determine role based on email
+                  const userRole = user.email === 'superadmin@workflowgene.cloud' ? 'super_admin' : 'user';
+                  
                   const { error: insertError } = await supabase
                     .from('profiles')
                     .insert({
                       id: user.id,
                       email: user.email,
                       email_verified: !!user.email_confirmed_at,
-                      role: user.email === 'superadmin@workflowgene.cloud' ? 'super_admin' : 'user',
+                      role: userRole,
                       first_name: user.user_metadata?.first_name || '',
                       last_name: user.user_metadata?.last_name || '',
+                      organization_id: userRole === 'super_admin' ? null : undefined,
+                      is_active: true,
                       created_at: new Date().toISOString(),
                       updated_at: new Date().toISOString()
                     });
@@ -108,6 +118,7 @@ const useAuthStore = create((set, get) => ({
               }
 
               profile = data;
+              console.log('Profile loaded:', { email: profile.email, role: profile.role });
               break;
             } catch (retryError) {
               retryCount++;
@@ -130,6 +141,7 @@ const useAuthStore = create((set, get) => ({
                 first_name: 'Super',
                 last_name: 'Admin',
                 organization_id: null, // Super admin doesn't belong to any org
+                is_active: true,
                 updated_at: new Date().toISOString()
               })
               .eq('id', user.id);
@@ -147,6 +159,7 @@ const useAuthStore = create((set, get) => ({
                 .eq('id', user.id)
                 .single();
               profile = updatedProfile;
+              console.log('Super admin role updated:', profile?.role);
             }
           }
 
