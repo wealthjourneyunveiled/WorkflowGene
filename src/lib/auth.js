@@ -144,11 +144,6 @@ export const signIn = async ({ email, password }) => {
     // Update last login timestamp
     if (data.user) {
       try {
-        // Ensure super admin has correct role
-        if (data.user.email === 'superadmin@workflowgene.cloud') {
-          await ensureSuperAdmin();
-        }
-
         await supabase
           .from('profiles')
           .update({ 
@@ -373,35 +368,8 @@ export const ensureSuperAdmin = async () => {
 
     console.log('Existing super admin profile:', existingProfile);
 
-    // Check if auth user exists
-    const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
-    const superAdminAuthUser = authUsers?.users?.find(u => u.email === 'superadmin@workflowgene.cloud');
-    
-    console.log('Super admin auth user exists:', !!superAdminAuthUser);
-
-    if (!existingProfile && superAdminAuthUser) {
-      console.log('Creating super admin profile...');
-      const { error: insertError } = await supabase
-        .from('profiles')
-        .insert({
-          id: superAdminAuthUser.id,
-          email: 'superadmin@workflowgene.cloud',
-          first_name: 'Super',
-          last_name: 'Admin',
-          role: 'super_admin',
-          email_verified: true,
-          organization_id: null,
-          is_active: true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        });
-
-      if (insertError) {
-        console.error('Error creating super admin:', insertError);
-      } else {
-        console.log('Super admin profile created successfully');
-      }
-    } else if (existingProfile && existingProfile.role !== 'super_admin') {
+    // If profile exists but role is wrong, update it
+    if (existingProfile && existingProfile.role !== 'super_admin') {
       console.log('Updating super admin role...');
       const { error: updateError } = await supabase
         .from('profiles')
@@ -423,8 +391,6 @@ export const ensureSuperAdmin = async () => {
       }
     } else if (existingProfile) {
       console.log('Super admin profile already exists with correct role');
-    } else {
-      console.warn('Super admin auth user does not exist. Please create it in Supabase Auth first.');
     }
   } catch (error) {
     console.error('Error ensuring super admin:', error);
